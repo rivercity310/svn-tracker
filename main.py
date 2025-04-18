@@ -8,9 +8,6 @@ from datetime import datetime
 from src.utils import mkdir, svn_status_fullname
 
 BACKUP_FOLDER_NAME = "SVN Tracker"
-EXCEL_FILE_NAME = "history.xlsx"
-EXCLUDE_FILE_TYPE = [".jar"]
-EXCLUDE_FOLDER_TYPE = [".idea", "target", "lib", ".smarttomcat"]    
 
 def run_svn_commit(repo_path, commit_list, commit_message):
     try:
@@ -94,6 +91,11 @@ def get_svn_status(repo_path):
     result = subprocess.run(["svn", "status"], cwd=repo_path, capture_output=True, text=True)
     return result.stdout
 
+def can_append_path(path, repo_path) -> bool:
+    result = subprocess.run(["svn", "status", "-u", path], cwd=repo_path, capture_output=True, text=True)
+    print(result)
+    return True
+
 def parse_status_output(output):
     print(output)
     # A	추가됨 (Added)
@@ -137,7 +139,7 @@ def parse_status_output(output):
             if status_code == '?':
                 print(f"- [Exclude] {path}  --  Unversioned File")
                 continue
-       
+            
             print(f"- [Include] {path}")
             path = path.replace("\\", "/")
             status_code = svn_status_fullname(status_code)
@@ -284,7 +286,7 @@ if __name__ == "__main__":
    /\\__/ /\\ \\_/ /| |\\  |   | |  | |   | (_| || (__ |   < |  __/| |   
    \\____/  \\___/ \\_| \\_/   \\_/  |_|    \\__,_| \\___||_|\\_\\ \\___||_|   
 
-                                            - developed by sshwang
+                                            - developed by sshwang (v1.0.2)
     """)
 
     # 프로그램 세팅 파일 로딩
