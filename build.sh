@@ -1,0 +1,1 @@
+pyinstaller main.py -n=svn_tracker --onefile
