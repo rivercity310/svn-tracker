@@ -95,44 +95,53 @@ def get_svn_status(repo_path):
     return result.stdout
 
 def parse_status_output(output):
+    print(output)
+    # A	추가됨 (Added)
+    # C	충돌 (Conflicted)
+    # D	삭제됨 (Deleted)
+    # I	무시됨 (Ignored)
+    # M	수정됨 (Modified)
+    # R	교체됨 (Replaced)
+    # X	외부 참조 (eXternals definition)
+    # ?	버전 관리되지 않음 (Unversioned)
+    # !	누락됨 (item missing, may be deleted)
+    # ~	타입 변경됨 (Type changed)
+
+    # 복합 상태가 나오는 경우
+    # A +	(A: Added, +: with history)	파일을 추가했는데, 기존 파일 복사해서 만든 경우
+    # R +	(R: Replaced, +: with history)	기존 파일 삭제 후 새 파일을 추가한 경우, 히스토리 있음
+    # R C	(R: Replaced, C: Conflict)	파일을 교체했는데 충돌도 남
+    # M C	(M: Modified, C: Conflict)	수정 중 충돌 발생
+    # A C	(A: Added, C: Conflict)	추가한 파일에 충돌 발생 (드물지만 가능)
+
+    BASE_STATUS = ['A', 'C', 'D', 'I', 'M', 'R', 'X', '?', '!', '~', 'A']
     changes = []
 
     for line in output.splitlines():
         if not line.strip():
             continue
 
-        splt = line.split()
-        status_code = line[0]
-        path = splt[-1]
+        status_code = line[:7].strip()
+        path = line[7:].strip()
 
-        if status_code == '-':
-            continue
+        # 기본 상태인 경우
+        if status_code in BASE_STATUS:
+            # 충돌 파일 제외
+            if status_code == 'C':
+                print("- [Exclude] 충돌 파일 제외")
+                print(line)
+                print()
+                continue
 
-        if status_code == 'C':
-            print("- [Exclude] 충돌 파일 제외")
-            print(line)
-            print()
-            continue
-
-        # path가 파일인 경우
-        if os.path.isdir(path) and path in EXCLUDE_FOLDER_TYPE:
-            print("- [Exclude] {path}")
-            continue
-
-        # path가 폴더인 경우
-        if os.path.isfile(path) and path in EXCLUDE_FILE_TYPE:
-            print("- [Exclude] {path}")
-            continue
- 
-        # Unversioned file 제외
-        if status_code == '?':
-            print(f"- [Exclude] {path}  --  Unversioned File")
-            continue
+            # Unversioned file 제외
+            if status_code == '?':
+                print(f"- [Exclude] {path}  --  Unversioned File")
+                continue
        
-        print(f"- [Include] {path}")
-        path = path.replace("\\", "/")
-        status_code = svn_status_fullname(status_code)
-        changes.append((status_code, path))
+            print(f"- [Include] {path}")
+            path = path.replace("\\", "/")
+            status_code = svn_status_fullname(status_code)
+            changes.append((status_code, path))
 
     return changes
 
@@ -252,7 +261,7 @@ def main(data: dict[str, object]) -> None:
         f.writelines(f"Commit Date: {now}\n\n")
         
         # 커밋 리스트 기록
-        f.writelines(f"[커밋 목록 {len(commit_list)}건]")
+        f.writelines(f"[커밋 목록 {len(commit_list)}건]\n")
         for type, file_path in commit_list:
             f.writelines(f"({type}) - {file_path}\n")
         
@@ -286,7 +295,7 @@ if __name__ == "__main__":
     else:
         with open(setting_path, "r") as yml:
             data = yaml.safe_load(yml)
-            
+        
         main(data)
 
     input("Press Enter to exit...")
