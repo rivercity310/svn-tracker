@@ -1,0 +1,7 @@
+./dist
+./build
+__pycache__
+.venv
+
+svn_tracker.spec
+main.spec
