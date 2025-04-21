@@ -27,3 +27,8 @@ def svn_status_fullname(code: str) -> str:
     }
 
     return status_mapping.get(code.upper(), 'Unknown')
+
+def press_input() -> None:
+    print()
+    input("Press Enter to exit...")
+    print()

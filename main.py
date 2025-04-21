@@ -5,7 +5,7 @@ import shutil
 import yaml
 from openpyxl import Workbook, load_workbook
 from datetime import datetime
-from src.utils import mkdir, svn_status_fullname
+from src.utils import mkdir, svn_status_fullname, press_input
 
 BACKUP_FOLDER_NAME = "SVN Tracker"
 
@@ -147,37 +147,7 @@ def parse_status_output(output):
 
     return changes
 
-def main(data: dict[str, object]) -> None:
-    projects = []
-
-    print("\n[Loading project list]\n")
-    for index, (key, value) in enumerate(data.items(), start=1):
-        print(f"{index}. {key}")
-        
-        for k in value:
-            print(f"\t- {k}: {value[k]}")
-
-        print("\n")
-        projects.append(value)
-    print("=" * 110)
-
-    select_num = int(input("Enter the project number you want to select: "))
-    select_num -= 1
-
-    if select_num < 0 or select_num >= len(projects):
-        print("Invalid project number selected.")
-        print(f"Selected number {select_num + 1} does not exist in the project list.")
-        exit(0)
-
-    repo_path = projects[select_num]['local']
-    remote_path = projects[select_num]['remote']
-
-    if remote_path is None or repo_path is None:
-        print("Error: Some settings are not configured.")
-        print(f"- Remote Path: {remote_path}")
-        print(f"- Local Path: {repo_path}")
-        exit(1)
-
+def main(repo_path, remote_path, ftp_list) -> None:
     repo_path = os.path.abspath(repo_path)
     repo_name = os.path.basename(repo_path)
     desktop_one_drive_path = os.path.join(os.path.expanduser("~"), "OneDrive", "Desktop")
@@ -210,11 +180,13 @@ def main(data: dict[str, object]) -> None:
     print("\n")
 
     if not changes:
-        print("✅ No changes detected.")
+        print("✅ 변경된 파일이 없습니다.")
+        print("프로그램을 종료합니다.")
+        press_input()
         return
 
     commit_list = []
-    print("[ Select files to commit ]")
+    print("[ 커밋할 대상 파일을 선택해주세요. ]")
 
     for type, file_path in changes:
         ans = input(f"({type}) {file_path} (Y/N): ")
@@ -222,45 +194,48 @@ def main(data: dict[str, object]) -> None:
             commit_list.append((type, file_path))
 
     if len(commit_list) == 0:
-        print("✅ No files selected for commit.")
+        print("✅ 선택된 커밋 대상 파일이 없습니다.")
+        print("프로그램을 종료합니다.")
+        press_input()
         return
 
-    print("\n\n[ Files to commit ]")
+    print("\n\n[ 선택된 커밋 대상 파일 ]")
     for type, file_path in commit_list:
         print(f"- ({type}) {file_path}")
 
-    rst = input("\n\nProceed with commit? (Y/N): ")
+    rst = input("\n\커밋을 진행할까요? (Y/N): ")
 
     if rst.upper() != "Y":
+        print("프로그램을 종료합니다.")
+        press_input()
         return
 
     while True:
-        commit_message = input("Enter commit message: ")
+        commit_message = input("커밋 메시지를 입력해주세요: ")
         if len(commit_message) > 0:
             break
         else:
-            print("- Commit message is required. Please describe the changes.")
+            print("[경고] 커밋 메시지는 최소 1글자 이상 입력해야 합니다.")
 
-    print("\n\n[ Downloading existing files ]")
+    print("\n\n[ Remote 서버의 파일을 백업 중입니다... ]")
     failed_list = export_existing_files(remote_path, before_path, commit_list)
-    print(f"- 👌 Successfully download {len(commit_list) - len(failed_list)} files.")
-    print(f"- 😭 Failed to download {len(failed_list)} files. (Not found in the remote SVN repository)")
+    print(f"- 👌 원격 서버에서 {len(commit_list) - len(failed_list)}개의 파일을 성공적으로 백업했습니다.")
+    print(f"- 😭 원격 서버에서 {len(failed_list)}개의 파일을 찾지 못했습니다.")
 
-    print("[ Committing files.... ]")
+    print("[ 커밋을 진행합니다... ]")
     run_svn_commit(repo_path, commit_list, commit_message)
-    print(f"- 🚀 {len(commit_list)} files have been committed successfully.")
+    print(f"- 🚀 {len(commit_list)}개의 파일이 성공적으로 커밋되었습니다.")
 
-    print("\n\n[ COPYING FILES.... ]") 
-    print(f"📦 Copying {len(commit_list)} changed files to {after_path}")
+    print("\n\n[ 파일을 복사합니다... ]") 
     copy_changed_files(commit_list, repo_path, after_path)
-    print()
+    print(f"📦 {len(commit_list)}개의 파일을 '{after_path}'에 성공적으로 복사하였습니다.\n")
 
-    history = input("Write a brief history description for this backup: ")
+    history = input("나중에 이 백업을 기억하기 위한 짧은 설명을 작성해주세요: ")
 
     with open(os.path.join(dest_path, "history.txt"), "w", encoding="UTF-8") as f:
-        f.writelines(f"Description: {history}\n")
-        f.writelines(f"Commit Message: {commit_message}\n")
-        f.writelines(f"Commit Date: {now}\n\n")
+        f.writelines(f"설명: {history}\n")
+        f.writelines(f"커밋 메시지: {commit_message}\n")
+        f.writelines(f"커밋 일시: {now}\n\n")
         
         # 커밋 리스트 기록
         f.writelines(f"[커밋 목록 {len(commit_list)}건]\n")
@@ -275,7 +250,18 @@ def main(data: dict[str, object]) -> None:
     excel_file_path = os.path.join(backup_path, "commit_history.xlsx")
     write_to_excel(commit_list, repo_path, excel_file_path)
 
+    res = input("변경 파일을 개발 서버에 반영할까요? (Y/N): ")
+
+    if res == 'N':
+        print("프로그램을 종료합니다.")
+        press_input()
+        return
+
+    transfer_committed_files()
     print("✅ Done!")
+
+def transfer_committed_files():
+    pass
 
 if __name__ == "__main__":
     print("""
@@ -293,12 +279,48 @@ if __name__ == "__main__":
     setting_path = os.path.join(os.path.expanduser("~"), "svn_tracker.yaml")
 
     if not os.path.exists(setting_path):
-        print(f"\n[error] 😅 Could not find '{setting_path}'")
-        print(f"[error] if you need help setting it up, please check the README.md!\n")
-    else:
-        with open(setting_path, "r") as yml:
-            data = yaml.safe_load(yml)
-        
-        main(data)
+        print(f"[에러] 😅 설정 파일을 찾을 수 없습니다. ('{setting_path}')")
+        print(f"[에러] 자세한 설정 방법은 README.md 파일을 참고해주세요.")
+        press_input()
+        exit(0)
+    
+    with open(setting_path, "r") as yml:
+        data = yaml.safe_load(yml)
+    
+    projects = []
 
-    input("Press Enter to exit...")
+    print("\n[프로젝트 목록]")
+    print("=" * 110)
+    for index, (key, value) in enumerate(data.items(), start=1):
+        print(f"{index}. {key}")
+        for k in value:
+            print(f"\t- {k}: {value[k]}")
+        print()
+        projects.append(value)
+    print("=" * 110)
+
+    while True:
+        select_num = int(input("작업할 프로젝트 번호를 입력해주세요: "))
+        select_num -= 1
+
+        if select_num < 0 or select_num >= len(projects):
+            print("[경고] 잘못된 프로젝트 번호입니다. 다시 선택해주세요.")
+        else:
+            break
+    
+    repo_path = projects[select_num]['local']
+    remote_path = projects[select_num]['remote']
+    ftp_list = projects[select_num]['ftp']
+
+    if remote_path is None or repo_path is None:
+        print("\n[에러] 선택한 프로젝트의 설정값을 확인해주세요.")
+        print(f"- Remote Path: {remote_path}")
+        print(f"- Local Path: {repo_path}")
+        press_input()
+        exit(0)
+
+    else:
+        os.system("cls")
+        print(ftp_list)
+        main(repo_path, remote_path, ftp_list)
+        press_input()

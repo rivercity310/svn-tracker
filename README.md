@@ -22,3 +22,9 @@ C:\\Users\\{UserName}\\svn_tracker.yaml
 ```sh
 ./run.bat
 ```
+
+---
+
+## Release
+
+우측 Release 탭 참고
