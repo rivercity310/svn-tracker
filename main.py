@@ -287,18 +287,20 @@ if __name__ == "__main__":
    /\\__/ /\\ \\_/ /| |\\  |   | |  | |   | (_| || (__ |   < |  __/| |   
    \\____/  \\___/ \\_| \\_/   \\_/  |_|    \\__,_| \\___||_|\\_\\ \\___||_|   
 
-                                      - developed by sshwang (v1.0.2)
+                                    - developed by sshwang (v1.0.3)
     """)
 
     # 프로그램 세팅 파일 로딩
     setting_path = os.path.join(os.path.expanduser("~"), "svn_tracker.yaml")
+    print()
 
     if not os.path.exists(setting_path):
-        print(f"😅 Could not find {setting_path}\n\n")
+        print(f"[Error] 😅 Could not find '{setting_path}'")
+        print("[Error] if you need help setting it up, please check the README.md.")
     else:
         with open(setting_path, "r") as yml:
             data = yaml.safe_load(yml)
         
         main(data)
 
-    input("Press Enter to exit...")
+    input("\nPress Enter to exit...")

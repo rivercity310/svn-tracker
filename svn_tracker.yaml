@@ -1,6 +1,6 @@
 kamco_hrd:
-  local: C:\Users\h9701\OneDrive\Desktop\Projects\kamco\kamco_hrd   # Checkout 로컬 경로
-  remote: http://222.122.47.196/svn/projects/2021/kamco_hrd         # 원격 SVN 경로
+  local: C:\Users\h9701\OneDrive\Desktop\Projects\kamco\kamco_hrd
+  remote: http://222.122.47.196/svn/projects/2021/kamco_hrd
 
 kamco_official:
   local:
