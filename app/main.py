@@ -5,9 +5,6 @@ import shutil
 import yaml
 from openpyxl import Workbook, load_workbook
 from datetime import datetime
-from src.utils import mkdir, svn_status_fullname, press_input
-
-BACKUP_FOLDER_NAME = "SVN Tracker"
 
 def run_svn_commit(repo_path, commit_list, commit_message):
     try:
@@ -36,14 +33,12 @@ def get_last_author(file_path, repo_path):
 
 def copy_changed_files(commit_list, src_root, dest_root):
     # dest 경로가 없으면 폴더 생성
-    if not os.path.exists(dest_root):
-        os.makedirs(dest_root)
+    mkdir(dest_root)
 
     for _, file_path in commit_list:
         full_src_path = os.path.join(src_root, file_path)
         full_dest_path = os.path.join(dest_root, file_path)
-
-        os.makedirs(os.path.dirname(full_dest_path), exist_ok=True)
+        mkdir(os.path.dirname(full_dest_path))
 
         if os.path.isfile(full_src_path):
             shutil.copy2(full_src_path, full_dest_path)
@@ -76,9 +71,7 @@ def export_existing_files(remote_svn_path, before_path, commit_list):
         local_save_path = before_path + "/" + file_path
 
         try:
-            if not os.path.exists(local_save_path):
-                os.makedirs(local_save_path, exist_ok=True)
-
+            mkdir(os.path.dirname(local_save_path))
             subprocess.run(["svn", "export", remote_file_path, local_save_path], check=True)
         except subprocess.CalledProcessError as e:
             print("😭😭 {remote_file_path} 파일 다운로드 실패")
@@ -226,9 +219,23 @@ def main(repo_path, remote_path, ftp_list) -> None:
     run_svn_commit(repo_path, commit_list, commit_message)
     print(f"- 🚀 {len(commit_list)}개의 파일이 성공적으로 커밋되었습니다.")
 
-    print("\n\n[ 파일을 복사합니다... ]") 
+    print("\n[ 파일을 복사합니다... ]") 
     copy_changed_files(commit_list, repo_path, after_path)
     print(f"📦 {len(commit_list)}개의 파일을 '{after_path}'에 성공적으로 복사하였습니다.\n")
+
+    res = input("변경 파일을 개발 서버에 반영할까요? (Y/N): ")
+
+    if res == 'N':
+        print("프로그램을 종료합니다.")
+        press_input()
+        return
+    
+    print("\n[ FTP 서버에 로그인합니다... ]") 
+    username = input("FTP Username: ")
+    password = input("FTP password: ")
+
+    for host in ftp_list:
+        transfer_committed_files(host, username, password)
 
     history = input("나중에 이 백업을 기억하기 위한 짧은 설명을 작성해주세요: ")
 
@@ -250,18 +257,11 @@ def main(repo_path, remote_path, ftp_list) -> None:
     excel_file_path = os.path.join(backup_path, "commit_history.xlsx")
     write_to_excel(commit_list, repo_path, excel_file_path)
 
-    res = input("변경 파일을 개발 서버에 반영할까요? (Y/N): ")
-
-    if res == 'N':
-        print("프로그램을 종료합니다.")
-        press_input()
-        return
-
-    transfer_committed_files()
     print("✅ Done!")
 
-def transfer_committed_files():
-    pass
+def transfer_committed_files(host, username, password):
+    ftp = FtpClient(host, username, password)
+
 
 if __name__ == "__main__":
     print("""
@@ -276,16 +276,17 @@ if __name__ == "__main__":
     """)
 
     # 프로그램 세팅 파일 로딩
-    setting_path = os.path.join(os.path.expanduser("~"), "svn_tracker.yaml")
+    setting_path = AppFiles.SETTING_FILE
+    print()
 
-    if not os.path.exists(setting_path):
+    if not setting_path.exists():
         print(f"[에러] 😅 설정 파일을 찾을 수 없습니다. ('{setting_path}')")
         print(f"[에러] 자세한 설정 방법은 README.md 파일을 참고해주세요.")
-        press_input()
+        CmdUtil.press_input()
         exit(0)
     
-    with open(setting_path, "r") as yml:
-        data = yaml.safe_load(yml)
+    with open(setting_path, "r") as f:
+        data = yaml.safe_load(f)
     
     projects = []
 
@@ -308,19 +309,21 @@ if __name__ == "__main__":
         else:
             break
     
-    repo_path = projects[select_num]['local']
-    remote_path = projects[select_num]['remote']
-    ftp_list = projects[select_num]['ftp']
-
-    if remote_path is None or repo_path is None:
+    project = projects[select_num]
+ 
+    if not project:
         print("\n[에러] 선택한 프로젝트의 설정값을 확인해주세요.")
-        print(f"- Remote Path: {remote_path}")
-        print(f"- Local Path: {repo_path}")
-        press_input()
+
+        if 'local' not in project:
+            print(f"- [에러] Local 경로를 지정해주세요.")
+        if 'remote' not in project:
+            print(f"- [에러] Remote 경로를 지정해주세요.")
+        if 'ftp' not in project:
+            print(f"- [에러] FTP 경로를 지정해주세요.")
+
+        CmdUtil.press_input()
         exit(0)
 
-    else:
-        os.system("cls")
-        print(ftp_list)
-        main(repo_path, remote_path, ftp_list)
-        press_input()
+    svn_tracker = SvnTracker(project)
+    svn_tracker.run()
+    CmdUtil.press_input()
