@@ -5,7 +5,29 @@ import shutil
 import yaml
 from openpyxl import Workbook, load_workbook
 from datetime import datetime
+from utils.classes import AppFiles
+from utils.cmd_util import CmdUtil
+from core.svn_tracker import SvnTracker
 
+"""
+# SVN Status를 받아서 풀네임 반환
+def svn_status_fullname(code: str) -> str:
+    status_mapping = {
+        'A': 'Added',
+        'C': 'Conflicted',
+        'D': 'Deleted',
+        'I': 'Ignored',
+        'M': 'Modified',
+        'R': 'Replaced',
+        'X': 'External',
+        '?': 'Unversioned',
+        '!': 'Missing',
+        '~': 'Obstructed',
+    }
+
+    return status_mapping.get(code.upper(), 'Unknown')
+"""
+"""
 def run_svn_commit(repo_path, commit_list, commit_message):
     try:
         commit_cmd = ["svn", "commit", "-m", commit_message]
@@ -141,18 +163,6 @@ def parse_status_output(output):
     return changes
 
 def main(repo_path, remote_path, ftp_list) -> None:
-    repo_path = os.path.abspath(repo_path)
-    repo_name = os.path.basename(repo_path)
-    desktop_one_drive_path = os.path.join(os.path.expanduser("~"), "OneDrive", "Desktop")
-    desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
-
-    if os.path.exists(desktop_one_drive_path):
-        backup_path = os.path.join(desktop_one_drive_path, BACKUP_FOLDER_NAME, repo_name)
-    elif os.path.exists(desktop_path):
-        backup_path = os.path.join(desktop_path, BACKUP_FOLDER_NAME, repo_name)
-
-    mkdir(backup_path)
-
     now = datetime.now().strftime("%Y%m%d_%H%M%S")
     dest_path = os.path.join(backup_path, now)
     before_path = os.path.join(backup_path, now, "before")
@@ -258,23 +268,9 @@ def main(repo_path, remote_path, ftp_list) -> None:
     write_to_excel(commit_list, repo_path, excel_file_path)
 
     print("✅ Done!")
+"""
 
-def transfer_committed_files(host, username, password):
-    ftp = FtpClient(host, username, password)
-
-
-if __name__ == "__main__":
-    print("""
-    _____  _   _  _   _   _____                     _                
-   /  ___|| | | || \\ | | |_   _|                   | |               
-   \\ `--. | | | ||  \\| |   | |   _ __   __ _   ___ | | __  ___  _ __ 
-    `--. \\| | | || . ` |   | |  | '__| / _` | / __|| |/ / / _ \\| '__|
-   /\\__/ /\\ \\_/ /| |\\  |   | |  | |   | (_| || (__ |   < |  __/| |   
-   \\____/  \\___/ \\_| \\_/   \\_/  |_|    \\__,_| \\___||_|\\_\\ \\___||_|   
-
-                                    - developed by sshwang (v1.0.3)
-    """)
-
+def main() -> None:
     # 프로그램 세팅 파일 로딩
     setting_path = AppFiles.SETTING_FILE
     print()
@@ -297,7 +293,7 @@ if __name__ == "__main__":
         for k in value:
             print(f"\t- {k}: {value[k]}")
         print()
-        projects.append(value)
+        projects.append((key, value))
     print("=" * 110)
 
     while True:
@@ -324,6 +320,28 @@ if __name__ == "__main__":
         CmdUtil.press_input()
         exit(0)
 
+    # Run
     svn_tracker = SvnTracker(project)
     svn_tracker.run()
+
     CmdUtil.press_input()
+
+
+if __name__ == "__main__":
+    AUTHOR = "sshwang"
+    VERSION = "v1.0.3"
+
+    CmdUtil.clear_cmd()
+
+    print(f"""
+    _____  _   _  _   _   _____                     _                
+   /  ___|| | | || \\ | | |_   _|                   | |               
+   \\ `--. | | | ||  \\| |   | |   _ __   __ _   ___ | | __  ___  _ __ 
+    `--. \\| | | || . ` |   | |  | '__| / _` | / __|| |/ / / _ \\| '__|
+   /\\__/ /\\ \\_/ /| |\\  |   | |  | |   | (_| || (__ |   < |  __/| |   
+   \\____/  \\___/ \\_| \\_/   \\_/  |_|    \\__,_| \\___||_|\\_\\ \\___||_|   
+
+                                    - developed by {AUTHOR} ({VERSION})
+    """)
+
+    main()
