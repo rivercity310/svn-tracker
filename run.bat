@@ -13,6 +13,6 @@ call ./\.venv\Scripts\activate
 call pip install -r requirements.txt
 
 :: 6. 메인 프로그램 실행
-call python ./app/main.py
+call python main.py
 
 endlocal
