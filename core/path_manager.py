@@ -32,10 +32,12 @@ class PathManager:
 
     # 경로에 대한 폴더 생성
     @classmethod
-    def mkdir(cls, path: Path):
-        # 파일인 경우 예외 발생 (확장자가 있으면 파일로 간주)
+    def mkdir(cls, path: Path | str):
+        if isinstance(path, str):
+            path = Path(path)
+
         if path.suffix: 
-            raise ValueError(f"❌ Cannot create a folder because the given path looks like a file: {path}")
+            path = path.parent
 
         try:
             path.mkdir(parents=True, exist_ok=True)

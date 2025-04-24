@@ -5,3 +5,4 @@ __pycache__
 
 svn_tracker.spec
 main.spec
+svn_tracker.yaml

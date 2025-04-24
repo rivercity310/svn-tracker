@@ -2,6 +2,7 @@ import yaml
 from utils.classes import AppFiles
 from utils.cmd_util import CmdUtil
 from core.svn_tracker import SvnTracker
+from clients.ssh_client import SshClient
 
 
 def main() -> None:
@@ -11,7 +12,7 @@ def main() -> None:
 
     if not setting_path.exists():
         print(f"[에러] 😅 설정 파일을 찾을 수 없습니다. ('{setting_path}')")
-        print(f"[에러] 자세한 설정 방법은 README.md 파일을 참고해주세요.")
+        print("[에러] 자세한 설정 방법은 README.md 파일을 참고해주세요.")
         CmdUtil.press_input()
         exit(0)
     
@@ -45,11 +46,11 @@ def main() -> None:
         print("\n[에러] 선택한 프로젝트의 설정값을 확인해주세요.")
 
         if 'local' not in project:
-            print(f"- [에러] Local 경로를 지정해주세요.")
+            print("- [에러] Local 경로를 지정해주세요.")
         if 'remote' not in project:
-            print(f"- [에러] Remote 경로를 지정해주세요.")
+            print("- [에러] Remote 경로를 지정해주세요.")
         if 'ftp' not in project:
-            print(f"- [에러] FTP 경로를 지정해주세요.")
+            print("- [에러] FTP 경로를 지정해주세요.")
 
         CmdUtil.press_input()
         exit(0)
