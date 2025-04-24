@@ -3,6 +3,7 @@ import paramiko
 
 class SshClient:
     def __init__(self, ssh_info, project_name: str):
+        self.project_name = project_name
         self.project_path = f"/app/webapps/{project_name}"
         self.client = paramiko.SSHClient()
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -46,6 +47,24 @@ class SshClient:
             f"/app/maven/bin/mvn clean && "
             f"/app/maven/bin/mvn package"
         )
+        self._exec(cmd)
+
+
+    def tboot(self):
+        cmd = (
+            f"cd {self.project_path} && "
+            f"tboot {self.project_name}"
+        )
+
+        self._exec(cmd)
+
+
+    def tdown(self):
+        cmd = (
+            f"cd {self.project_path} && "
+            f"tdown {self.project_name}"
+        )
+
         self._exec(cmd)
 
 

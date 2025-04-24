@@ -1,5 +1,6 @@
 import subprocess
 import shutil
+import time
 from openpyxl import Workbook, load_workbook
 from datetime import datetime
 from pathlib import Path
@@ -89,7 +90,7 @@ class SvnTracker:
         for f in fail_list: print(f"\t- 😭 {f['status']}: {f['path']}")
 
         print("\n\n[ 커밋을 진행합니다... ]")
-        #self._svn_commit(commit_list, commit_message)
+        self._svn_commit(commit_list, commit_message)
         print(f"\t- 🚀 {len(commit_list)}개의 파일이 성공적으로 커밋되었습니다.")
 
         print("\n\n[ 파일을 복사합니다... ]") 
@@ -111,6 +112,9 @@ class SvnTracker:
         ssh.svn_update(commit_list)
         if any('.java' in c['path'] for c in commit_list):
             ssh.build_jar()
+            ssh.tdown()
+            time.sleep(7)
+            ssh.tboot()
 
         print("✅ Done!")
 
