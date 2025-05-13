@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='SVN Tracker v1.0.3',
+    name='SVN Tracker',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

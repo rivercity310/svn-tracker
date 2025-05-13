@@ -1,1 +1,1 @@
-pyinstaller main.py -n=svn_tracker --onefile
+pyinstaller main.py -n="SVN Tracker" --onefile

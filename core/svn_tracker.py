@@ -110,7 +110,10 @@ class SvnTracker:
         print("\n\n[ SSH 접속중... ]")
         ssh = SshClient(self.ssh, self.project_name)
         ssh.svn_update(commit_list)
-        if any('.java' in c['path'] for c in commit_list):
+
+        path_list = [c['path'].endswith('.java') or c['path'].endswith('.xml') for c in commit_list]
+
+        if any(path_list):
             ssh.build_jar()
             ssh.tdown()
             time.sleep(7)

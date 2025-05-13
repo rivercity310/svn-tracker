@@ -15,17 +15,6 @@ class SshClient:
             password=ssh_info['password']
         )
     
-
-    def build_jar(self):
-        print("[Build Jar.....]")
-        cmd = f"{self.cd} && rm -Rf /home/developer/.m2/repository/architecture && /app/maven/bin/mvn clean && /app/maven/bin/mvn package"
-        _, stdout, stderr = self.client.exec_command(cmd)
-
-        # 출력 결과
-        print(stdout.read().decode())
-        print(stderr.read().decode())
-
-
     def show_project_dir(self):
         """프로젝트 디렉토리 내 파일 목록"""
         self._exec(f"cd {self.project_path} && ls -al")
